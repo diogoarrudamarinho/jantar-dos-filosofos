@@ -1,54 +1,51 @@
-public class Filosofo implements Runnable {
-    private final int id;  
-    private final Hashi HashiEsquerdo, HashiDireito;  
+class Filosofo implements Runnable {
+    private final int id;
+    private final Hashi hashiEsquerdo;
+    private final Hashi hashiDireito;
+    private final Mesa mesa;
 
-    public Filosofo(int id, Hashi HashiEsquerdo, Hashi HashiDireito) {
+    public Filosofo(int id, Hashi hashiEsquerdo, Hashi hashiDireito, Mesa mesa) {
         this.id = id;
-        this.HashiEsquerdo = HashiEsquerdo;
-        this.HashiDireito = HashiDireito;
+        this.hashiEsquerdo = hashiEsquerdo;
+        this.hashiDireito = hashiDireito;
+        this.mesa = mesa;
     }
 
     @Override
     public void run() {
         try {
-            while (true) { 
-                meditar();
-                comer();
+            while (true) {
+                mesa.setEstado(id, 0); // pensando
+                dormirAleatorio();
+
+                mesa.setEstado(id, 1); // esperando
+                pegarHashis();
+
+                mesa.setEstado(id, 2); // comendo
+                dormirAleatorio();
+                
+                soltarHashis();
             }
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();  
+            Thread.currentThread().interrupt();
             System.out.println("Filósofo " + id + " interrompido.");
         }
     }
 
-    private void meditar() throws InterruptedException {
-        System.out.println("Filósofo " + id + " está pensando.");
-        Thread.sleep((long) (Math.random() * 5000));  // Espera aleatória
+    private void dormirAleatorio() throws InterruptedException {
+        // Thread.sleep is intentionally used here to simulate thinking/eating time in the philosopher's loop.
+        Thread.sleep((long) (Math.random() * 5000));
     }
 
-    private void comer() throws InterruptedException {
-        // Estratégia anti-deadlock: ordenação por ID
-        Hashi primeiro = HashiEsquerdo;
-        Hashi segundo = HashiDireito;
-        
-        // Sempre pega o garfo de MENOR ID primeiro
-        if (HashiEsquerdo.getId() > HashiDireito.getId()) {
-            primeiro = HashiDireito;
-            segundo = HashiEsquerdo;
-        }
+    private void pegarHashis() {
+        Hashi primeiro = hashiEsquerdo.getId() < hashiDireito.getId() ? hashiEsquerdo : hashiDireito;
+        Hashi segundo = hashiEsquerdo.getId() > hashiDireito.getId() ? hashiEsquerdo : hashiDireito;
+        primeiro.pegar();
+        segundo.pegar();
+    }
 
-        primeiro.pegar();  // Adquire o primeiro garfo
-        segundo.pegar();   // Adquire o segundo garfo
-
-        try {
-            System.out.println("Filósofo " + id + " está comendo.");
-            Thread.sleep((long) (Math.random() * 5000));  // Simula tempo de refeição
-        } finally {
-            segundo.liberar();  // Libera na ordem inversa
-            primeiro.liberar();  // Garante liberação mesmo com exceções
-        }
+    private void soltarHashis() {
+        hashiEsquerdo.liberar();
+        hashiDireito.liberar();
     }
 }
-
-
-
